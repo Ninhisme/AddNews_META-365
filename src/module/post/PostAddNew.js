@@ -1,8 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import slugify from "slugify";
 import styled from "styled-components";
-import { number } from "yup/lib/locale";
 import { Button } from "../../components/button";
 import { Radio } from "../../components/checkbox";
 import { Dropdown } from "../../components/dropdown";
@@ -16,6 +15,8 @@ import {
   uploadBytesResumable,
   getDownloadURL,
 } from "firebase/storage";
+import ImageUpload from "../../components/image/ImageUpload";
+
 const PostAddNewStyles = styled.div``;
 
 const PostAddNew = () => {
@@ -29,29 +30,25 @@ const PostAddNew = () => {
     },
   });
   const watchStatus = watch("status");
-  console.log("PostAddNew ~ watchStatus,", watchStatus);
   const watchCategory = watch("category");
   const addPostHandler = async (values) => {
     const cloneValues = { ...values };
     cloneValues.slug = slugify(values.slug || values.title);
     cloneValues.status = Number(values.status);
-    console.log("addPostHander ~ cloneValues", cloneValues);
   };
 
-  const handleUploadImage = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
+  const [progress, setProgress] = useState(0);
+  const [image, setImage] = useState("");
+  const handleUploadImage = (file) => {
     const storage = getStorage();
-
     const storageRef = ref(storage, "images/" + file.name);
     const uploadTask = uploadBytesResumable(storageRef, file);
     uploadTask.on(
       "state_changed",
       (snapshot) => {
-        const progress =
+        const progressPercent =
           (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        console.log("Upload is " + progress + "% done");
+        setProgress(progressPercent);
         switch (snapshot.state) {
           case "paused":
             console.log("Upload is paused");
@@ -67,12 +64,18 @@ const PostAddNew = () => {
         console.log("Error");
       },
       () => {
-        // Upload completed successfully, now we can get the download URL
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
           console.log("File available at", downloadURL);
+          setImage(downloadURL);
         });
       }
     );
+  };
+  const onSelectImage = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setValue("image", file);
+    handleUploadImage(file);
   };
 
   return (
@@ -101,7 +104,12 @@ const PostAddNew = () => {
         <div className="grid grid-cols-2 gap-x-10 mb-10">
           <Field>
             <Label>Image</Label>
-            <input type="file" name="image" onChange={handleUploadImage} />
+            <ImageUpload
+              onChange={onSelectImage}
+              className="h-[250px]"
+              progress={progress}
+              image={image}
+            ></ImageUpload>
           </Field>
           <Field>
             <Label>Status</Label>
@@ -135,19 +143,19 @@ const PostAddNew = () => {
               </Radio>
             </div>
           </Field>
-          <Field>
+          {/* <Field>
             <Label>Author</Label>
             <Input control={control} placeholder="Find the author"></Input>
-          </Field>
+          </Field> */}
         </div>
         <div className="grid grid-cols-2 gap-x-10 mb-10">
           <Field>
             <Label>Category</Label>
-            <Dropdown>
+            {/* <Dropdown>
               <Dropdown.Option>Knowledge</Dropdown.Option>
               <Dropdown.Option>Blockchain</Dropdown.Option>
               <Dropdown.Option>Setup</Dropdown.Option>
-            </Dropdown>
+            </Dropdown> */}
           </Field>
           <Field></Field>
         </div>
