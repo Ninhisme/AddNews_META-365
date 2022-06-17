@@ -1,21 +1,16 @@
-import React, { useState } from "react";
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import slugify from "slugify";
 import styled from "styled-components";
 import { Button } from "../../components/button";
 import { Radio } from "../../components/checkbox";
-import { Dropdown } from "../../components/dropdown";
 import Field from "../../components/field";
+import ImageUpload from "../../components/image/ImageUpload";
 import { Input } from "../../components/input";
 import { Label } from "../../components/Label";
+import { storage } from "../../filebase/filebase-config";
 import { postStatus } from "../../utils/constants";
-import {
-  getStorage,
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-} from "firebase/storage";
-import ImageUpload from "../../components/image/ImageUpload";
 
 const PostAddNewStyles = styled.div``;
 
@@ -39,9 +34,11 @@ const PostAddNew = () => {
 
   const [progress, setProgress] = useState(0);
   const [image, setImage] = useState("");
+
   const handleUploadImage = (file) => {
-    const storage = getStorage();
-    const storageRef = ref(storage, "images/" + file.name);
+    console.log(file);
+
+    const storageRef = ref(storage, `images/${file.name}`);
     const uploadTask = uploadBytesResumable(storageRef, file);
     uploadTask.on(
       "state_changed",
@@ -61,7 +58,7 @@ const PostAddNew = () => {
         }
       },
       (error) => {
-        console.log("Error");
+        console.error(error);
       },
       () => {
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
@@ -71,6 +68,7 @@ const PostAddNew = () => {
       }
     );
   };
+
   const onSelectImage = (e) => {
     const file = e.target.files[0];
     if (!file) return;
