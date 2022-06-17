@@ -1,5 +1,5 @@
-import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
-import { useState } from "react";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import slugify from "slugify";
 import styled from "styled-components";
@@ -9,72 +9,48 @@ import Field from "../../components/field";
 import ImageUpload from "../../components/image/ImageUpload";
 import { Input } from "../../components/input";
 import { Label } from "../../components/Label";
-import { storage } from "../../filebase/filebase-config";
+import Toggle from "../../components/toggle/Toggle";
+import { db } from "../../filebase/filebase-config";
+import useFirebaseImage from "../../hooks/useFirebaseImage";
 import { postStatus } from "../../utils/constants";
 
 const PostAddNewStyles = styled.div``;
 
 const PostAddNew = () => {
-  const { control, watch, setValue, handleSubmit } = useForm({
+  const { control, watch, setValue, handleSubmit, getValues } = useForm({
     mode: "onChange",
     defaultValues: {
       title: "",
       slug: "",
       status: "2",
       category: "",
+      hot: false,
     },
   });
   const watchStatus = watch("status");
-  const watchCategory = watch("category");
+  const watchHot = watch("hot");
+  // const watchCategory = watch("category");
   const addPostHandler = async (values) => {
     const cloneValues = { ...values };
     cloneValues.slug = slugify(values.slug || values.title);
     cloneValues.status = Number(values.status);
   };
 
-  const [progress, setProgress] = useState(0);
-  const [image, setImage] = useState("");
+  const { image, progress, handleSelectImage, handleDeleteImage } =
+    useFirebaseImage(setValue, getValues);
 
-  const handleUploadImage = (file) => {
-    console.log(file);
+  useEffect(() => {
+    async function getData() {
+      const colRef = collection(db, "categories");
+      const q = query(colRef, where("status", "==", 1));
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((doc) => {
+        console.log(doc.id, " => ", doc.data());
+      });
+    }
 
-    const storageRef = ref(storage, `images/${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        const progressPercent =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setProgress(progressPercent);
-        switch (snapshot.state) {
-          case "paused":
-            console.log("Upload is paused");
-            break;
-          case "running":
-            console.log("Upload is running");
-            break;
-          default:
-            console.log("Nothing at all");
-        }
-      },
-      (error) => {
-        console.error(error);
-      },
-      () => {
-        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-          console.log("File available at", downloadURL);
-          setImage(downloadURL);
-        });
-      }
-    );
-  };
-
-  const onSelectImage = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setValue("image", file);
-    handleUploadImage(file);
-  };
+    getData();
+  }, []);
 
   return (
     <PostAddNewStyles>
@@ -103,11 +79,30 @@ const PostAddNew = () => {
           <Field>
             <Label>Image</Label>
             <ImageUpload
-              onChange={onSelectImage}
+              onChange={handleSelectImage}
+              handleDeleteImage={handleDeleteImage}
               className="h-[250px]"
               progress={progress}
               image={image}
             ></ImageUpload>
+          </Field>
+
+          <Field>
+            <Label>Category</Label>
+          </Field>
+
+          {/* <Field>
+            <Label>Author</Label>
+            <Input control={control} placeholder="Find the author"></Input>
+          </Field> */}
+        </div>
+        <div className="grid grid-cols-2 gap-x-10 mb-10">
+          <Field>
+            <Label>Feature post</Label>
+            <Toggle
+              on={watchHot === true}
+              onClick={() => setValue("hot", !watchHot)}
+            ></Toggle>
           </Field>
           <Field>
             <Label>Status</Label>
@@ -141,21 +136,6 @@ const PostAddNew = () => {
               </Radio>
             </div>
           </Field>
-          {/* <Field>
-            <Label>Author</Label>
-            <Input control={control} placeholder="Find the author"></Input>
-          </Field> */}
-        </div>
-        <div className="grid grid-cols-2 gap-x-10 mb-10">
-          <Field>
-            <Label>Category</Label>
-            {/* <Dropdown>
-              <Dropdown.Option>Knowledge</Dropdown.Option>
-              <Dropdown.Option>Blockchain</Dropdown.Option>
-              <Dropdown.Option>Setup</Dropdown.Option>
-            </Dropdown> */}
-          </Field>
-          <Field></Field>
         </div>
         <Button type="submit" className="mx-auto">
           Add new post
