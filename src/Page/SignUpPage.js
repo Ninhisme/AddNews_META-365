@@ -5,7 +5,7 @@ import { Label } from "../components/Label";
 import { useForm } from "react-hook-form";
 // import { values } from "lodash";
 import { IconEyeClose, IconEyeOpen } from "../components/icon";
-import Field from "../components/field";
+import { Field } from "../components/field";
 import Button from "../components/button/Button";
 const SignUpPageStyles = styled.div`
   background-color: ${(props) => props.theme.primary};
@@ -38,9 +38,7 @@ const SignUpPage = () => {
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid, isSubmitting },
-    watch,
-    reset,
+    formState: { isValid },
   } = useForm({});
   // An se load 5s sumit
   const handleSignUp = (values) => {

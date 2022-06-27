@@ -1,6 +1,8 @@
-import { SignInMethod } from "firebase/auth";
+// import { SignInMethod } from "firebase/auth";
 import { Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./contexts/auth-context";
+import CategoryAddNew from "./module/category/CategoryAddNew";
+import CategoryManage from "./module/category/CategoryManage";
 // import PageIndex from "./module/dashbroad";
 import DashboardLayout from "./module/dashbroad/DashbroadLayout";
 import PostAddNew from "./module/post/PostAddNew";
@@ -29,6 +31,16 @@ function App() {
             <Route
               path="/manage/add-post"
               element={<PostAddNew></PostAddNew>}
+            ></Route>
+
+            <Route
+              path="/manage/category"
+              element={<CategoryManage></CategoryManage>}
+            ></Route>
+
+            <Route
+              path="/manage/add-category"
+              element={<CategoryAddNew></CategoryAddNew>}
             ></Route>
           </Route>
         </Routes>

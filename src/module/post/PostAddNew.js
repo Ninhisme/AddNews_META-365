@@ -1,15 +1,23 @@
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
+import { useState } from "react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+
+import { CheckOutlined } from "@ant-design/icons";
+import { notification } from "antd";
+
 import slugify from "slugify";
 import styled from "styled-components";
 import { Button } from "../../components/button";
 import { Radio } from "../../components/checkbox";
-import Field from "../../components/field";
+import { Dropdown } from "../../components/dropdown";
+import { Field } from "../../components/field";
+
 import ImageUpload from "../../components/image/ImageUpload";
 import { Input } from "../../components/input";
 import { Label } from "../../components/Label";
 import Toggle from "../../components/toggle/Toggle";
+// import { useAuth } from "../../contexts/auth-context";
 import { db } from "../../filebase/filebase-config";
 import useFirebaseImage from "../../hooks/useFirebaseImage";
 import { postStatus } from "../../utils/constants";
@@ -17,40 +25,84 @@ import { postStatus } from "../../utils/constants";
 const PostAddNewStyles = styled.div``;
 
 const PostAddNew = () => {
-  const { control, watch, setValue, handleSubmit, getValues } = useForm({
+  // const { userInfor } = useAuth();
+  const { control, watch, setValue, handleSubmit, getValues, reset } = useForm({
     mode: "onChange",
     defaultValues: {
       title: "",
       slug: "",
       status: "2",
-      category: "",
+      categoryId: "",
       hot: false,
+      image: "",
     },
   });
   const watchStatus = watch("status");
   const watchHot = watch("hot");
-  // const watchCategory = watch("category");
-  const addPostHandler = async (values) => {
-    const cloneValues = { ...values };
-    cloneValues.slug = slugify(values.slug || values.title);
-    cloneValues.status = Number(values.status);
-  };
-
   const { image, progress, handleSelectImage, handleDeleteImage } =
     useFirebaseImage(setValue, getValues);
+  const [categories, setCategories] = useState([]);
+  const [selectCategory, setSelectCategory] = useState("");
+
+  // const watchCategory = watch("category");
+
+  const addPostHandler = async (values) => {
+    const cloneValues = { ...values };
+    cloneValues.slug = slugify(values.slug || values.title, { lower: true });
+    cloneValues.status = Number(values.status);
+    const colRef = collection(db, "posts");
+    await addDoc(colRef, {
+      ...cloneValues,
+      image,
+      // userId: userInfor.id,
+    });
+
+    notification.success({
+      message: "Create new post successfully!",
+      description: "",
+      icon: (
+        <CheckOutlined
+          style={{
+            color: "#108ee9",
+          }}
+        />
+      ),
+    });
+
+    reset({
+      title: "",
+      slug: "",
+      status: "2",
+      categoryId: "",
+      hot: false,
+      image: "",
+    });
+
+    setSelectCategory({});
+  };
 
   useEffect(() => {
     async function getData() {
       const colRef = collection(db, "categories");
       const q = query(colRef, where("status", "==", 1));
       const querySnapshot = await getDocs(q);
+      let result = [];
       querySnapshot.forEach((doc) => {
-        console.log(doc.id, " => ", doc.data());
+        result.push({
+          id: doc.id,
+          ...doc.data(),
+        });
       });
+      setCategories(result);
     }
 
     getData();
   }, []);
+
+  const handleClickOption = (item) => {
+    setValue("CategoryId", item.id);
+    setSelectCategory(item);
+  };
 
   return (
     <PostAddNewStyles>
@@ -89,6 +141,27 @@ const PostAddNew = () => {
 
           <Field>
             <Label>Category</Label>
+            <Dropdown>
+              <Dropdown.Select
+                placeholder={`${selectCategory.name || "Select the category"}`}
+              ></Dropdown.Select>
+              <Dropdown.List>
+                {categories.length > 0 &&
+                  categories.map((item) => (
+                    <Dropdown.Option
+                      key={item.id}
+                      onClick={() => handleClickOption(item)}
+                    >
+                      {item.name}
+                    </Dropdown.Option>
+                  ))}
+              </Dropdown.List>
+            </Dropdown>
+            {/* {selectCategory?.name && (
+              <span className="inline-block p-3 rounded-lg bg-gray-200 text-sm font-medium">
+                {selectCategory?.name}
+              </span>
+            )} */}
           </Field>
 
           {/* <Field>

@@ -1,3 +1,3 @@
 import Label from "./Label";
-
-export { Label };
+import LabelStatus from "./labelStatus";
+export { Label, LabelStatus };

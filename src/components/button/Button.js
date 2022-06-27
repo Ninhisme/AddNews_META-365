@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import LoadingSpinner from "../loading/Loading";
+import PropTypes from "prop-types";
 const ButtonStyle = styled.button`
   display: flex;
   justify-content: center;
@@ -33,6 +34,15 @@ const Button = ({
       {child}
     </ButtonStyle>
   );
+};
+
+Button.propTypes = {
+  type: PropTypes.oneOf(["button", "submit"]),
+  isLoading: PropTypes.bool,
+  onClick: PropTypes.func,
+  children: PropTypes.node,
+
+  kind: PropTypes.oneOf(["primary", "secondary", "ghost"]),
 };
 
 export default Button;

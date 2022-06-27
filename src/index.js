@@ -7,6 +7,7 @@ import { GlobalStyles } from "./styles/GlobalStyles";
 import { BrowserRouter } from "react-router-dom";
 import { createRoot } from "react-dom/client";
 import { theme } from "./utils/constants";
+import "antd/dist/antd.css";
 const container = document.getElementById("root");
 const root = createRoot(container);
 

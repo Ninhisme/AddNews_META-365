@@ -25,7 +25,7 @@ const DashboardHeader = () => {
   return (
     <DashboardHeaderStyles>
       <Button
-        to="/dashboard"
+        to="/manage/add-post"
         className="header-button"
         style={{ maxWidth: 250, height: 60, alignSelf: "flex-end" }}
       >
