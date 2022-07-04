@@ -5,8 +5,10 @@ import {
   doc,
   getDoc,
   onSnapshot,
+  query,
+  where,
 } from "firebase/firestore";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useState } from "react";
 import { ActionDelete, ActionEdit, ActionView } from "../../components/action";
 import { Button } from "../../components/button";
@@ -17,13 +19,19 @@ import { Table } from "../../components/table";
 import { db } from "../../filebase/filebase-config";
 import { categoryStatus } from "../../utils/constants";
 import DashboardHeading from "../dashbroad/DashbroadHeading";
+import { useNavigate } from "react-router-dom";
+import { debounce } from "lodash";
 
 const CategoryManage = () => {
   // Lay dl file base
+  // 326
   const [categoryList, getCategoryList] = useState([]);
+  const navigate = useNavigate();
+  const [filter, setFilter] = useState("");
   useEffect(() => {
     const colRef = collection(db, "categories");
-    onSnapshot(colRef, (snapshot) => {
+    const newRef = filter ? query(colRef, where("name", "==", filter)) : colRef;
+    onSnapshot(newRef, (snapshot) => {
       let results = [];
       snapshot.forEach((doc) => {
         results.push({
@@ -33,7 +41,7 @@ const CategoryManage = () => {
       });
       getCategoryList(results);
     });
-  }, []);
+  }, [filter]);
   const handleDeleteCategory = async (docId) => {
     const colRef = doc(db, "categories", docId);
     Swal.fire({
@@ -51,11 +59,29 @@ const CategoryManage = () => {
       }
     });
   };
+
+  const handleInputFilter = debounce((e) => {
+    setFilter(e.target.value);
+  }, 500);
   return (
     <div>
-      <DashboardHeading title="Categories" desc="Manage your category">
-        <Button to="/manage/add-category">Create category</Button>
-      </DashboardHeading>
+      <DashboardHeading
+        title="Categories"
+        desc="Manage your category"
+      ></DashboardHeading>
+      <div className="mb-10 flex justify-end">
+        <Button kind="ghost" height="50px" to="/manage/add-category">
+          Create category
+        </Button>
+      </div>
+      <div className="mb-10 flex justify-end">
+        <input
+          type="text"
+          className="py-4 px-5 border border-gray-300 rounded-lg"
+          placeholder="Search category..."
+          onChange={handleInputFilter}
+        />
+      </div>
       <Table>
         <thead>
           <tr>
@@ -76,18 +102,22 @@ const CategoryManage = () => {
                   <em className="text-gray-400">{category.slug}</em>
                 </td>
                 <td>
-                  {category.status === categoryStatus.APPROVED && (
+                  {Number(category.status) === categoryStatus.APPROVED && (
                     <LabelStatus type="success">Approved</LabelStatus>
                   )}
 
-                  {category.status === categoryStatus.UNAPPROVED && (
+                  {Number(category.status) === categoryStatus.UNAPPROVED && (
                     <LabelStatus type="warning">Unapproved</LabelStatus>
                   )}
                 </td>
                 <td>
                   <div className="flex gap-5 text-gray-400">
                     <ActionView></ActionView>
-                    <ActionEdit></ActionEdit>
+                    <ActionEdit
+                      onClick={() =>
+                        navigate(`/manage/update-category?id=${category.id}`)
+                      }
+                    ></ActionEdit>
                     <ActionDelete
                       onClick={() => handleDeleteCategory(category.id)}
                     ></ActionDelete>
